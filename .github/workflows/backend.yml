@@ -21,7 +21,7 @@ jobs:
         ECR_REPOSITORY: chat-app
         IMAGE_TAG: latest
            
-        steps:
+      steps:
            - name: build and push docker image 
            - uses: actions/checkout@v4
            
