@@ -5,11 +5,11 @@ on:
     paths:
       - "backend/**"
       - ".github/workflows/backend.yml"
-  branches:
-    - master
+    branches:
+     - master
   workflow_dispatch:
-
-  jobs:
+  
+jobs:
     build:
       runs-on: self-hosted
     
@@ -39,10 +39,10 @@ on:
                ECR_REPOSITORY: chat-app
                IMAGE_TAG: latest
 
-          run: |
-            docker build -t ${{env.ECR_REGISTRY}}/${{ env.ECR_REPOSITORY }}:${{ env.IMAGE_TAG }} \
-            -f ./backend/Dockerfile ./backend
-            docker push ${{env.ECR_REGISTRY}}/${{ env.ECR_REPOSITORY }}:${{ env.IMAGE_TAG }}
+             run: |
+               docker build -t ${{env.ECR_REGISTRY}}/${{ env.ECR_REPOSITORY }}:${{ env.IMAGE_TAG }} \
+               -f ./backend/Dockerfile ./backend
+               docker push ${{env.ECR_REGISTRY}}/${{ env.ECR_REPOSITORY }}:${{ env.IMAGE_TAG }}
 
       
 
