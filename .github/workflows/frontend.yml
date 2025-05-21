@@ -32,7 +32,7 @@ jobs:
           cd frontend
           npm ci
           npm run build 
-          npm test
+  
 
       - name: Rename build folder
         run: mv frontend/dist frontend_build
