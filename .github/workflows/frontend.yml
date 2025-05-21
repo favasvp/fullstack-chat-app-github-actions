@@ -1,0 +1,81 @@
+
+name: Deploy frontend to aws
+
+on:
+  push:
+    paths:
+      - "frontend/**"
+      - ".github/workflows/frontend.yml"
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build:
+
+    runs-on: self-hosted
+
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x, 22.x]
+        # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+    - name: build the app   
+      env:
+          VITE_API_BASE_URL: ${{ secrets.VITE_API_BASE_URL }}
+          VITE_BASE_URL: ${{ secrets.VITE_BASE_URL }}
+          VITE_WS_URL: ${{ secrets.VITE_WS_URL }}
+    - run: |
+        cd frontend
+        npm ci
+        npm run build --if-present
+        npm test
+    - name: Rename build folder
+      run: mv frontend/dist frontend_build
+      
+  Ssh-connection_clean:
+    runs-on: self-hosted
+    steps:
+    - name: Clean Temporary Directory on Lightsail
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.LIGHTSAIL_HOST }}
+        username: ${{ secrets.LIGHTSAIL_USER }}
+        key: ${{ secrets.LIGHTSAIL_KEY }}
+        timeout: 60s
+        script: |
+            rm -rf ~/deploy-temp
+            mkdir -p ~/deploy-temp
+            chmod 775 ~/deploy-temp
+
+    - name: Upload Frontend Build to Lightsail
+      uses: appleboy/scp-action@master
+      with:
+        host: ${{ secrets.LIGHTSAIL_HOST }}
+        username: ${{ secrets.LIGHTSAIL_USER }}
+        key: ${{ secrets.LIGHTSAIL_KEY }}
+        source: "frontend_build/*"
+        target: "~/deploy-temp"
+
+    - name: Deploy to taa66-frontend folder
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.LIGHTSAIL_HOST }}
+        username: ${{ secrets.LIGHTSAIL_USER }}
+        key: ${{ secrets.LIGHTSAIL_KEY }}
+        script: |
+           sudo rm -rf /var/www/html/taa66-frontend
+           sudo mkdir -p /var/www/html/taa66-frontend
+           sudo cp -r ~/deploy-temp/* /var/www/html/taa66-frontend/
+           sudo chmod -R 755 /var/www/html/taa66-frontend
+
+
+  
+ 
