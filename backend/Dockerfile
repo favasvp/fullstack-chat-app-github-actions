@@ -1,20 +1,28 @@
-# Use official Node.js LTS image
-FROM node:18
 
-# Set working directory
-WORKDIR /app
+# syntax=docker/dockerfile:1
+ARG NODE_VERSION=22.11.0
+FROM node:${NODE_VERSION}-alpine
 
-# Copy package.json and package-lock.json
-COPY package*.json ./
+ENV NODE_ENV=production
 
-# Install dependencies
-RUN npm install
+WORKDIR /usr/src/app
 
-# Copy the rest of the app source code
+# Pre-create logs directory and set permissions BEFORE switching users
+RUN mkdir -p /usr/src/app/logs \
+    && chown -R node:node /usr/src/app
+
+# Download dependencies
+RUN --mount=type=bind,source=package.json,target=package.json \
+    --mount=type=bind,source=package-lock.json,target=package-lock.json \
+    --mount=type=cache,target=/root/.npm \
+    npm ci --omit=dev
+
+# Switch to non-root user after setting permissions
+USER node
+
+# Copy source files after user switch (safe since ownership is set)
 COPY . .
 
-# Expose the port your app runs on
 EXPOSE 5001
 
-# Start the app
 CMD ["npm", "start"]
